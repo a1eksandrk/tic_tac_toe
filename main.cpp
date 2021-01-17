@@ -34,43 +34,48 @@ void fillMatrix(int** matrix, int size, int num) {
     }
 }
 
-void keydownHandling(int** gameDataModel, int button, int& x, int& y) {
+void keydownHandling(int** gameDataModel, int button, int& x, int& y, int key, int& player) {
     switch (button)
     {
     case 72: //вверх
         if (y - 1 >= 0) {
-            gameDataModel[y][x] -= STEP;
+            gameDataModel[y][x] -= key;
             y--;
-            gameDataModel[y][x] += STEP;
+            gameDataModel[y][x] += key;
         }
         break;
     case 80: //вниз
         if (y + 1 < SIZE) {
-            gameDataModel[y][x] -= STEP;
+            gameDataModel[y][x] -= key;
             y++;
-            gameDataModel[y][x] += STEP;
+            gameDataModel[y][x] += key;
         }
         break;
     case 75: //влево 
         if (x - 1 >= 0) {
-            gameDataModel[y][x] -= STEP;
+            gameDataModel[y][x] -= key;
             x--;
-            gameDataModel[y][x] += STEP;
+            gameDataModel[y][x] += key;
         }
         break;
     case 77: //вправо
         if (x + 1 < SIZE) {
-            gameDataModel[y][x] -= STEP;
+            gameDataModel[y][x] -= key;
             x++;
-            gameDataModel[y][x] += STEP;
+            gameDataModel[y][x] += key;
         }
         break;
     case 32:
-        gameDataModel[y][x] -= STEP;
+        gameDataModel[y][x] -= key;
 
-        if (gameDataModel[y][x] == 0) gameDataModel[y][x]--;
+        if (gameDataModel[y][x] == 0) {
+            gameDataModel[y][x] += player;
+            player = -(player);
+            x = 0;
+            y = 0;
+        }
 
-        gameDataModel[y][x] += STEP;
+        gameDataModel[y][x] += key;
         break;
     }
 }
@@ -105,7 +110,7 @@ char** createFrameSprite() {
     return frameTemplate;
 }
 
-// Иницилизация константрой структуры с спрафтами
+// Иницилизация константрой структуры с спрайтами
 struct Templates
 {
     char** cross = createCrossSprite();
@@ -195,6 +200,18 @@ void printGameCanvas(char** bufferCanvas, int size) {
     }
 }
 
+void printPlayerInformation(int player) {
+    switch (player)
+    {
+    case 1:
+        cout << endl << "Player 1 turn" << endl;
+        break;
+    case -1:
+        cout << endl << "Player 2 turn" << endl;
+        break;
+    }
+}
+
 // Рендер игрового поля
 void renderGameCanvas(int** matrix, char** buffer, int matrixSize, int bufferSize, int key) {
     clearGameCanvas(buffer, bufferSize);
@@ -208,19 +225,90 @@ void renderGameCanvas(int** matrix, char** buffer, int matrixSize, int bufferSiz
     printGameCanvas(buffer, bufferSize);
 }
 
-bool dataModelProcessing(int** martix) {
-    // TODO доделать обработку состояния матрицы для окончания игры
-    return true;
+int dataModelProcessing(int** matrix, int size, int& x, int& y, int key, int player) {
+    int result = 0;
+
+    matrix[y][x] -= key;
+
+    // Проверка строк матрицы
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            result += matrix[i][j];
+        }
+
+        if (abs(result) == 3) return player;
+
+        result = 0;
+    }
+
+    // Проверка столбцов матрицы
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            result += matrix[j][i];
+        }
+
+        if (abs(result) == 3) return player;
+
+        result = 0;
+    }
+
+    // Проверка главной диагонали
+    for (int i = 0, j = 0; i < size && j < size; i++, j++) {
+        result += matrix[i][j];
+    }
+
+    if (abs(result) == 3) return player;
+
+    result = 0;
+
+    // Проверка побочной диагонали
+    for (int i = 0, j = size - 1; i < size && j >= 0; i++, j--) {
+        result += matrix[i][j];
+    }
+
+    if (abs(result) == 3) return player;
+
+    result = 0;
+
+    // Проверка на ничью
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            result += abs(matrix[i][j]);
+        }
+    }
+
+    if (result == pow(size, 2)) return key;
+
+    matrix[y][x] += key;
+
+    return 0;
 }
 
-void clearMatrixFromMemory(int** martix, int size) {
+void printGameResult(int gameState) {
+    switch (gameState)
+    {
+    case 1:
+        cout << endl << "Player 1 wins" << endl;
+        break;
+    case -1:
+        cout << endl << "Player 1 wins" << endl;
+        break;
+    default:
+        cout << endl << "Draw!" << endl;
+        break;
+    }
+
+    system("pause");
+}
+
+void clearMatrixFromMemory(int** matrix, int size) {
     // Последовательно очищаем каждый указатель в массиве
     for (int i = 0; i < size; i++) {
-        delete[] martix[i];
+        delete[] matrix[i];
     }
 
     // Очищаем сам массив указателей
-    delete[] martix;
+    delete[] matrix;
 }
 
 // Очистка памяти буфера
@@ -247,30 +335,42 @@ void game() {
     // Итерируем матрицу по текущим координатам на произвольное положительное натуральное число
     gameDataModel[y][x] += STEP;
 
-    // Рендерим начальное состояния модели данных
-    renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
-
     // Инициализируем нажатую кнопку и состояние игры
     int button = 0;
 
-    bool isGame = true;
+    int gameState = 0;
+
+    // Иницилизация игрока
+    int player = 1;
+
+    // Рендерим начальное состояния модели данных и игроке
+    renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
+    printPlayerInformation(player);
 
     // Запускаем игровой цикл
-    while (isGame) {
+    while (gameState == 0) {
         if (_kbhit()) {
             // Получаем нажатие кнопки
             button = _getch();
-            
+
             // Обработка нажатия
-            keydownHandling(gameDataModel, button, x, y);
+            keydownHandling(gameDataModel, button, x, y, STEP, player);
 
             // Перересовка игрового поля
             renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
 
             // Логика состояния матрицы
-            dataModelProcessing(gameDataModel);
+            gameState = dataModelProcessing(gameDataModel, SIZE, x, y, STEP, player);
+
+            if (gameState != 0) continue;
+
+            // Информация о игроке
+            printPlayerInformation(player);
         }
     }
+
+    // Вывод результата игры
+    printGameResult(gameState);
 
     clearMatrixFromMemory(gameDataModel, SIZE);
     clearBufferFromMemory(gameCanvas, BUFFER_SIZE);
