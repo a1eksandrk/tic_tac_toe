@@ -302,14 +302,13 @@ void printGameCanvas(char** bufferCanvas, int size) {
 }
 
 void printPlayerInformation(int player) {
-    switch (player)
-    {
-    case 1:
-        cout << endl << "Player X turn" << endl;
-        break;
-    case -1:
-        cout << endl << "Player O turn" << endl;
-        break;
+    switch (player) {
+        case 1:
+            cout << endl << "Player X turn" << endl;
+            break;
+        case -1:
+            cout << endl << "Player O turn" << endl;
+            break;
     }
 }
 
@@ -400,6 +399,21 @@ void playerTurnHandling(int button, int** gameDataModel, char** gameCanvas, int&
         // Информация о игроке
         printPlayerInformation(currentPlayer);
     }
+}
+
+void computerTurnHandling(int** gameDataModel, char** gameCanvas, int& gameState, int& x, int& y, int& currentPlayer) {
+    // TODO реализация логики обработки хода компьютера
+
+    // Перересовка игрового поля
+    renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
+
+    // Логика состояния матрицы
+    gameState = dataModelProcessing(gameDataModel, SIZE, x, y, STEP, -currentPlayer);
+
+    if (gameState != 0) return;
+
+    // Информация о игроке
+    printPlayerInformation(currentPlayer);
 }
 
 void printGameResult(int gameState) {
@@ -510,6 +524,7 @@ void game() {
                     playerTurnHandling(button, gameDataModel, gameCanvas, gameState, x, y, currentPlayer);
                 }
             } else {
+                // TODO Реализовать ход компьтера
                 try {
                     throw exception("Computer turn has not yet been implemented");
                 } catch (const exception& e) {
@@ -518,6 +533,7 @@ void game() {
                     system("pause");
                     return;
                 }
+                computerTurnHandling(gameDataModel, gameCanvas, gameState, x, y, currentPlayer);
             }
         } else { // Если игра на двоих, то игроки просто сменяют друг друга после каждого хода
             playerTurnHandling(button, gameDataModel, gameCanvas, gameState, x, y, currentPlayer);
