@@ -1,7 +1,13 @@
 #include <iostream>
 #include <conio.h>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
+
+int getRandomNumber(int min, int max) {
+    return min + rand() % (max - min + 1);
+}
 
 const int SIZE = 3;
 const int STEP = 11;
@@ -32,6 +38,14 @@ void fillMatrix(int** matrix, int size, int num) {
             matrix[i][j] = num;
         }
     }
+}
+
+int getRandomPlayer() {
+    bool player = static_cast<bool>(getRandomNumber(0, 1));
+
+    if (player) return 1;
+
+    return -1;
 }
 
 void keydownHandling(int** gameDataModel, int button, int& x, int& y, int key, int& player) {
@@ -204,10 +218,10 @@ void printPlayerInformation(int player) {
     switch (player)
     {
     case 1:
-        cout << endl << "Player 1 turn" << endl;
+        cout << endl << "Player X turn" << endl;
         break;
     case -1:
-        cout << endl << "Player 2 turn" << endl;
+        cout << endl << "Player O turn" << endl;
         break;
     }
 }
@@ -288,10 +302,10 @@ void printGameResult(int gameState) {
     switch (gameState)
     {
     case 1:
-        cout << endl << "Player 1 wins" << endl;
+        cout << endl << "Player X wins" << endl;
         break;
     case -1:
-        cout << endl << "Player 1 wins" << endl;
+        cout << endl << "Player O wins" << endl;
         break;
     default:
         cout << endl << "Draw!" << endl;
@@ -340,8 +354,8 @@ void game() {
 
     int gameState = 0;
 
-    // Иницилизация игрока
-    int player = 1;
+    // Иницилизация случайного игрока
+    int player = getRandomPlayer();
 
     // Рендерим начальное состояния модели данных и игрока
     renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
@@ -377,6 +391,8 @@ void game() {
 }
 
 int main() {
+    srand(static_cast<unsigned int>(time(0)));
+
     game();
 
     return 0;
