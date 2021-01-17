@@ -433,6 +433,41 @@ void clearBufferFromMemory(char** buffer, int size) {
     delete[] buffer;
 }
 
+bool getRepeatGame() {
+    bool isRepeat = false;
+
+    int button = 0;
+
+    const int menuSize = 2;
+    string title = "Repeat the game?";
+    string menu[menuSize] = {
+        " Yes",
+        " No"
+    };
+    int indicator = 1;
+
+    renderMenu(title, menu, menuSize, indicator);
+
+    do {
+        if (_kbhit()) {
+            menuKeydownHandling(button, indicator);
+
+            switch (indicator) {
+            case 1:
+                isRepeat = true;
+                break;
+            case 2:
+                isRepeat = false;
+                break;
+            }
+
+            renderMenu(title, menu, menuSize, indicator);
+        }
+    } while (button != Keys::SPACE);
+
+    return isRepeat;
+}
+
 void game() {
     // Инициализация матрицы модели данных и буфера для отрисовки
     int** gameDataModel = allocateMemoryForMatrix(SIZE);
@@ -495,6 +530,9 @@ void game() {
     // Очищение памяти
     clearMatrixFromMemory(gameDataModel, SIZE);
     clearBufferFromMemory(gameCanvas, BUFFER_SIZE);
+
+    // Возможность начать игру заново
+    if (getRepeatGame()) game();
 }
 
 int main() {
