@@ -17,15 +17,20 @@ const int FRAME_SIZE = 5;
 const int CELL_SIZE = WALL_SIZE + FRAME_SIZE;
 const int BUFFER_SIZE = CELL_SIZE * SIZE - 1;
 
+const enum Keys {
+    UP_ARROW = 72,
+    LEFT_ARROW = 75,
+    DOWN_ARROW = 80,
+    RIGHT_ARROW = 77,
+    SPACE = 32
+};
+
 int** allocateMemoryForMatrix(int size) {
     // Выделяем память на массив указателей
     int** matrix = new int* [size];
 
     // Последовательно выделяем память для каждого указателя из массива
-    for (int i = 0; i < size; i++) {
-        matrix[i] = new int[size];
-
-    }
+    for (int i = 0; i < size; i++) matrix[i] = new int[size];
     // Получаем массив указателей ввиде квадратной матрицы
 
     return matrix;
@@ -40,6 +45,94 @@ void fillMatrix(int** matrix, int size, int num) {
     }
 }
 
+void menuKeydownHandling(int& button, int& indicator) {
+    button = _getch();
+
+    if (button == Keys::SPACE) return;
+
+    switch (button)
+    {
+    case Keys::DOWN_ARROW:
+        if (indicator < 2) indicator++;
+        break;
+    case Keys::UP_ARROW:
+        if (indicator > 1) indicator--;
+        break;
+    }
+}
+
+void renderMenu(string title, string menu[], int menuSize, int indicator) {
+    for (int i = 0; i < menuSize; i++) menu[i][0] = ' ';
+
+    menu[indicator - 1][0] = '>';
+
+    system("cls");
+
+    cout << title << endl;
+
+    for (int i = 0; i < 2; i++) cout << menu[i] << endl;
+}
+
+bool getPlayersCount() {
+    int playersCount = 1;
+
+    int button = 0;
+
+    const int menuSize = 2;
+    string title = "Select the number of players";
+    string menu[menuSize] = {
+        " 1 Player",
+        " 2 Players"
+    };
+
+    renderMenu(title, menu, menuSize, playersCount);
+
+    do {
+        if (_kbhit()) {
+            menuKeydownHandling(button, playersCount);
+
+            renderMenu(title, menu, menuSize, playersCount);
+        }
+    } while (button != Keys::SPACE);
+
+    return playersCount == 1;
+}
+
+int getPlayerSymbol() {
+    int playerSymbol = 1;
+
+    int button = 0;
+
+    const int menuSize = 2;
+    string title = "Select the player's symbol";
+    string menu[menuSize] = {
+        " X symbol",
+        " O symbol"
+    };
+    int indicator = 1;
+
+    renderMenu(title, menu, menuSize, indicator);
+
+    do {
+        if (_kbhit()) {
+            menuKeydownHandling(button, indicator);
+
+            switch (indicator) {
+                case 1:
+                    playerSymbol = 1;
+                    break;
+                case 2:
+                    playerSymbol = -1;
+                    break;
+            }
+
+            renderMenu(title, menu, menuSize, indicator);
+        }
+    } while (button != Keys::SPACE);
+
+    return playerSymbol;
+}
+
 int getRandomPlayer() {
     bool player = static_cast<bool>(getRandomNumber(0, 1));
 
@@ -49,48 +142,47 @@ int getRandomPlayer() {
 }
 
 void keydownHandling(int** gameDataModel, int button, int& x, int& y, int key, int& player) {
-    switch (button)
-    {
-    case 72: //вверх
-        if (y - 1 >= 0) {
+    switch (button) {
+        case Keys::UP_ARROW: //вверх
+            if (y - 1 >= 0) {
+                gameDataModel[y][x] -= key;
+                y--;
+                gameDataModel[y][x] += key;
+            }
+            break;
+        case Keys::DOWN_ARROW: //вниз
+            if (y + 1 < SIZE) {
+                gameDataModel[y][x] -= key;
+                y++;
+                gameDataModel[y][x] += key;
+            }
+            break;
+        case Keys::LEFT_ARROW: //влево 
+            if (x - 1 >= 0) {
+                gameDataModel[y][x] -= key;
+                x--;
+                gameDataModel[y][x] += key;
+            }
+            break;
+        case Keys::RIGHT_ARROW: //вправо
+            if (x + 1 < SIZE) {
+                gameDataModel[y][x] -= key;
+                x++;
+                gameDataModel[y][x] += key;
+            }
+            break;
+        case Keys::SPACE:
             gameDataModel[y][x] -= key;
-            y--;
-            gameDataModel[y][x] += key;
-        }
-        break;
-    case 80: //вниз
-        if (y + 1 < SIZE) {
-            gameDataModel[y][x] -= key;
-            y++;
-            gameDataModel[y][x] += key;
-        }
-        break;
-    case 75: //влево 
-        if (x - 1 >= 0) {
-            gameDataModel[y][x] -= key;
-            x--;
-            gameDataModel[y][x] += key;
-        }
-        break;
-    case 77: //вправо
-        if (x + 1 < SIZE) {
-            gameDataModel[y][x] -= key;
-            x++;
-            gameDataModel[y][x] += key;
-        }
-        break;
-    case 32:
-        gameDataModel[y][x] -= key;
 
-        if (gameDataModel[y][x] == 0) {
-            gameDataModel[y][x] += player;
-            player = -(player);
-            x = 0;
-            y = 0;
-        }
+            if (gameDataModel[y][x] == 0) {
+                gameDataModel[y][x] += player;
+                player = -(player);
+                x = 0;
+                y = 0;
+            }
 
-        gameDataModel[y][x] += key;
-        break;
+            gameDataModel[y][x] += key;
+            break;
     }
 }
 
@@ -136,9 +228,7 @@ struct Templates
 char** allocateMemoryForBuffer(int size) {
     char** buffer = new char* [size];
 
-    for (int i = 0; i < size; i++) {
-        buffer[i] = new char[size];
-    }
+    for (int i = 0; i < size; i++) buffer[i] = new char[size];
 
     return buffer;
 }
@@ -156,9 +246,7 @@ void clearGameCanvas(char** buffer, int bufferSize) {
 void createWallsOnCanvas(char** buffer, int bufferSize, int cellSize) {
     for (int i = 0; i < bufferSize; i++) {
         for (int j = 0; j < bufferSize; j++) {
-            if ((i + 1) % cellSize == 0 || (j + 1) % cellSize == 0) {
-                buffer[i][j] = '#';
-            }
+            if ((i + 1) % cellSize == 0 || (j + 1) % cellSize == 0) buffer[i][j] = '#';
         }
     }
 }
@@ -191,14 +279,13 @@ void fillingGameCanvasCells(int** matrix, char** gameCanvas, int size, int key) 
                 insertingSpriteIntoBuffer(gameCanvas, templates.frame, FRAME_SIZE, j * CELL_SIZE, i * CELL_SIZE);
             }
 
-            switch (symbol)
-            {
-            case -1: // Отрисовка нолика
-                insertingSpriteIntoBuffer(gameCanvas, templates.ring, SPRITE_SIZE, j * CELL_SIZE + 1, i * CELL_SIZE + 1);
-                break;
-            case 1: // Отрисовка крестика
-                insertingSpriteIntoBuffer(gameCanvas, templates.cross, SPRITE_SIZE, j * CELL_SIZE + 1, i * CELL_SIZE + 1);
-                break;
+            switch (symbol) {
+                case -1: // Отрисовка нолика
+                    insertingSpriteIntoBuffer(gameCanvas, templates.ring, SPRITE_SIZE, j * CELL_SIZE + 1, i * CELL_SIZE + 1);
+                    break;
+                case 1: // Отрисовка крестика
+                    insertingSpriteIntoBuffer(gameCanvas, templates.cross, SPRITE_SIZE, j * CELL_SIZE + 1, i * CELL_SIZE + 1);
+                    break;
             }
         }
     }
@@ -267,18 +354,14 @@ int dataModelProcessing(int** matrix, int size, int& x, int& y, int key, int pla
     }
 
     // Проверка главной диагонали
-    for (int i = 0, j = 0; i < size && j < size; i++, j++) {
-        result += matrix[i][j];
-    }
+    for (int i = 0, j = 0; i < size && j < size; i++, j++) result += matrix[i][j];
 
     if (abs(result) == 3) return player;
 
     result = 0;
 
     // Проверка побочной диагонали
-    for (int i = 0, j = size - 1; i < size && j >= 0; i++, j--) {
-        result += matrix[i][j];
-    }
+    for (int i = 0, j = size - 1; i < size && j >= 0; i++, j--) result += matrix[i][j];
 
     if (abs(result) == 3) return player;
 
@@ -298,18 +381,38 @@ int dataModelProcessing(int** matrix, int size, int& x, int& y, int key, int pla
     return 0;
 }
 
+void playerTurnHandling(int button, int** gameDataModel, char** gameCanvas, int& gameState, int& x, int& y, int& currentPlayer) {
+    if (_kbhit()) {
+        // Получаем нажатие кнопки
+        button = _getch();
+
+        // Обработка нажатия
+        keydownHandling(gameDataModel, button, x, y, STEP, currentPlayer);
+
+        // Перересовка игрового поля
+        renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
+
+        // Логика состояния матрицы
+        gameState = dataModelProcessing(gameDataModel, SIZE, x, y, STEP, -currentPlayer);
+
+        if (gameState != 0) return;
+
+        // Информация о игроке
+        printPlayerInformation(currentPlayer);
+    }
+}
+
 void printGameResult(int gameState) {
-    switch (gameState)
-    {
-    case 1:
-        cout << endl << "Player X wins" << endl;
-        break;
-    case -1:
-        cout << endl << "Player O wins" << endl;
-        break;
-    default:
-        cout << endl << "Draw!" << endl;
-        break;
+    switch (gameState) {
+        case 1:
+            cout << endl << "Player X wins" << endl;
+            break;
+        case -1:
+            cout << endl << "Player O wins" << endl;
+            break;
+        default:
+            cout << endl << "Draw!" << endl;
+            break;
     }
 
     system("pause");
@@ -317,9 +420,7 @@ void printGameResult(int gameState) {
 
 void clearMatrixFromMemory(int** matrix, int size) {
     // Последовательно очищаем каждый указатель в массиве
-    for (int i = 0; i < size; i++) {
-        delete[] matrix[i];
-    }
+    for (int i = 0; i < size; i++) delete[] matrix[i];
 
     // Очищаем сам массив указателей
     delete[] matrix;
@@ -327,9 +428,7 @@ void clearMatrixFromMemory(int** matrix, int size) {
 
 // Очистка памяти буфера
 void clearBufferFromMemory(char** buffer, int size) {
-    for (int i = 0; i < size; i++) {
-        delete[] buffer[i];
-    }
+    for (int i = 0; i < size; i++) delete[] buffer[i];
 
     delete[] buffer;
 }
@@ -351,41 +450,49 @@ void game() {
 
     // Инициализируем нажатую кнопку и состояние игры
     int button = 0;
-
     int gameState = 0;
 
-    // Иницилизация случайного игрока
-    int player = getRandomPlayer();
+    // Выбор кол-ва реальных игроков
+    bool isSinglePlayer = getPlayersCount();
+
+    int player = 0;
+
+    // Если одиночная игра, то нужно выбрать себе символ хода
+    if (isSinglePlayer) player = getPlayerSymbol();
+
+    // Иницилизация случайного хода игрока
+    int currentPlayer = getRandomPlayer();
 
     // Рендерим начальное состояния модели данных и игрока
     renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
-    printPlayerInformation(player);
+    printPlayerInformation(currentPlayer);
 
     // Запускаем игровой цикл
     while (gameState == 0) {
-        if (_kbhit()) {
-            // Получаем нажатие кнопки
-            button = _getch();
-
-            // Обработка нажатия
-            keydownHandling(gameDataModel, button, x, y, STEP, player);
-
-            // Перересовка игрового поля
-            renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
-
-            // Логика состояния матрицы
-            gameState = dataModelProcessing(gameDataModel, SIZE, x, y, STEP, -player);
-
-            if (gameState != 0) continue;
-
-            // Информация о игроке
-            printPlayerInformation(player);
+        if (isSinglePlayer) { // Если одиночная игра, то ход игрока чередуется с компьютером
+            if (currentPlayer == player) {
+                if (_kbhit()) {
+                    playerTurnHandling(button, gameDataModel, gameCanvas, gameState, x, y, currentPlayer);
+                }
+            } else {
+                try {
+                    throw exception("Computer turn has not yet been implemented");
+                } catch (const exception& e) {
+                    system("cls");
+                    cerr << e.what() << endl;
+                    system("pause");
+                    return;
+                }
+            }
+        } else { // Если игра на двоих, то игроки просто сменяют друг друга после каждого хода
+            playerTurnHandling(button, gameDataModel, gameCanvas, gameState, x, y, currentPlayer);
         }
     }
 
     // Вывод результата игры
     printGameResult(gameState);
 
+    // Очищение памяти
     clearMatrixFromMemory(gameDataModel, SIZE);
     clearBufferFromMemory(gameCanvas, BUFFER_SIZE);
 }
