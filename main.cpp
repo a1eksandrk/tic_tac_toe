@@ -343,7 +343,7 @@ void game() {
     // Иницилизация игрока
     int player = 1;
 
-    // Рендерим начальное состояния модели данных и игроке
+    // Рендерим начальное состояния модели данных и игрока
     renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
     printPlayerInformation(player);
 
