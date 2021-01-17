@@ -374,7 +374,7 @@ void game() {
             renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
 
             // Логика состояния матрицы
-            gameState = dataModelProcessing(gameDataModel, SIZE, x, y, STEP, player);
+            gameState = dataModelProcessing(gameDataModel, SIZE, x, y, STEP, -player);
 
             if (gameState != 0) continue;
 
