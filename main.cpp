@@ -25,6 +25,11 @@ const enum Keys {
     SPACE = 32
 };
 
+const enum Computer {
+    SELF_WEIGHT = 3,
+    ENEMY_WEIGHT = 2
+};
+
 int** allocateMemoryForMatrix(int size) {
     // Выделяем память на массив указателей
     int** matrix = new int* [size];
@@ -184,6 +189,98 @@ void keydownHandling(int** gameDataModel, int button, int& x, int& y, int key, i
             gameDataModel[y][x] += key;
             break;
     }
+}
+
+// Инкрементируем вес в зависимости от того что в ячейке и устанавливаем координаты для хода
+void increaseWeigth(int data, int& weigth, int& turnXcoord, int& turnYcoord, int& player, int i, int j) {
+    if (data == player) {
+        // Просто увеличиваем вес
+        weigth += Computer::SELF_WEIGHT;
+        // Если компьютер ловит комбо и видит два одинковых символа в линии, то вес удваевается
+        if (weigth % Computer::SELF_WEIGHT == 0 && weigth > Computer::SELF_WEIGHT) weigth *= 2;
+    }
+    else if (data == -player) {
+        // Просто увеличиваем вес
+        weigth += Computer::ENEMY_WEIGHT;
+        // Если компьютер ловит комбо и видит два одинковых символа в линии, то вес удваевается
+        if (weigth % Computer::ENEMY_WEIGHT == 0 && weigth > Computer::ENEMY_WEIGHT) weigth *= 2;
+    }
+    else {
+        // Запоминаем свободную ячейку в линии
+        turnXcoord = j;
+        turnYcoord = i;
+    }
+}
+
+// Устанавиваем координаты по самому оптимальному ходу
+void settingCoordinates(int& weigth, int& prevWeigth, int& turnXcoord, int& turnYcoord, int& x, int& y) {
+    // Если новый вес выше предыдущего, то меняем координаты на более ценные
+    if (weigth > prevWeigth && (turnXcoord >= 0 && turnYcoord >= 0)) {
+        x = turnXcoord;
+        y = turnYcoord;
+
+        prevWeigth = weigth;
+    }
+
+    // Не забываем сбросить вес и координаты
+    weigth = 0;
+
+    turnXcoord = -1;
+    turnYcoord = -1;
+
+}
+
+// Проверяем все возможные ходы для принятия решения на основе весов
+void checkLinesOnMatrix(int** gameDataModel, int& player, int& x, int& y, int size) {
+    int weigth = 0;
+    int prevWeigth = weigth;
+
+    int turnXcoord = -1;
+    int turnYcoord = -1;
+
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            increaseWeigth(gameDataModel[i][j], weigth, turnXcoord, turnYcoord, player, i, j);
+        }
+
+        settingCoordinates(weigth, prevWeigth, turnXcoord, turnYcoord, x, y);
+    }
+
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            increaseWeigth(gameDataModel[j][i], weigth, turnXcoord, turnYcoord, player, j, i);
+        }
+
+        settingCoordinates(weigth, prevWeigth, turnXcoord, turnYcoord, x, y);
+    }
+
+    for (int i = 0, j = 0; i < size && j < size; i++, j++) {
+        increaseWeigth(gameDataModel[i][j], weigth, turnXcoord, turnYcoord, player, i, j);
+    }
+
+    settingCoordinates(weigth, prevWeigth, turnXcoord, turnYcoord, x, y);
+
+    for (int i = 0, j = size - 1; i < size && j >= 0; i++, j--) {
+        increaseWeigth(gameDataModel[i][j], weigth, turnXcoord, turnYcoord, player, i, j);
+    }
+
+    settingCoordinates(weigth, prevWeigth, turnXcoord, turnYcoord, x, y);
+}
+
+// Логика хода компьютера
+void computerTurn(int** gameDataModel, int& x, int& y, int size, int key, int& player) {
+    gameDataModel[y][x] -= key;
+
+    // Проверяем все возможные ходы для принятия решения на основе весов
+    checkLinesOnMatrix(gameDataModel, player, x, y, size);
+
+    // Компьютер делает ход и передает эстафету игроку
+    gameDataModel[y][x] += player;
+    player = -(player);
+    x = 0;
+    y = 0;
+
+    gameDataModel[y][x] += key;
 }
 
 // Функции создания шаблонов спрайтов
@@ -403,6 +500,7 @@ void playerTurnHandling(int button, int** gameDataModel, char** gameCanvas, int&
 
 void computerTurnHandling(int** gameDataModel, char** gameCanvas, int& gameState, int& x, int& y, int& currentPlayer) {
     // TODO реализация логики обработки хода компьютера
+    computerTurn(gameDataModel, x, y, SIZE, STEP, currentPlayer);
 
     // Перересовка игрового поля
     renderGameCanvas(gameDataModel, gameCanvas, SIZE, BUFFER_SIZE, STEP);
@@ -524,15 +622,6 @@ void game() {
                     playerTurnHandling(button, gameDataModel, gameCanvas, gameState, x, y, currentPlayer);
                 }
             } else {
-                // TODO Реализовать ход компьтера
-                try {
-                    throw exception("Computer turn has not yet been implemented");
-                } catch (const exception& e) {
-                    system("cls");
-                    cerr << e.what() << endl;
-                    system("pause");
-                    return;
-                }
                 computerTurnHandling(gameDataModel, gameCanvas, gameState, x, y, currentPlayer);
             }
         } else { // Если игра на двоих, то игроки просто сменяют друг друга после каждого хода
