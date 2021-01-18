@@ -22,7 +22,12 @@ const enum Keys {
     LEFT_ARROW = 75,
     DOWN_ARROW = 80,
     RIGHT_ARROW = 77,
-    SPACE = 32
+    W = 87,
+    A = 65,
+    S = 83,
+    D = 68,
+    SPACE = 32,
+    ENTER = 13
 };
 
 const enum Computer {
@@ -58,9 +63,11 @@ void menuKeydownHandling(int& button, int& indicator) {
     switch (button)
     {
     case Keys::DOWN_ARROW:
+    case Keys::S:
         if (indicator < 2) indicator++;
         break;
     case Keys::UP_ARROW:
+    case Keys::W:
         if (indicator > 1) indicator--;
         break;
     }
@@ -98,7 +105,7 @@ bool getPlayersCount() {
 
             renderMenu(title, menu, menuSize, playersCount);
         }
-    } while (button != Keys::SPACE);
+    } while (button != Keys::SPACE && button != Keys::ENTER);
 
     return playersCount == 1;
 }
@@ -133,7 +140,7 @@ int getPlayerSymbol() {
 
             renderMenu(title, menu, menuSize, indicator);
         }
-    } while (button != Keys::SPACE);
+    } while (button != Keys::SPACE && button != Keys::ENTER);
 
     return playerSymbol;
 }
@@ -149,6 +156,7 @@ int getRandomPlayer() {
 void keydownHandling(int** gameDataModel, int button, int& x, int& y, int key, int& player) {
     switch (button) {
         case Keys::UP_ARROW: //вверх
+        case Keys::W:
             if (y - 1 >= 0) {
                 gameDataModel[y][x] -= key;
                 y--;
@@ -156,13 +164,15 @@ void keydownHandling(int** gameDataModel, int button, int& x, int& y, int key, i
             }
             break;
         case Keys::DOWN_ARROW: //вниз
+        case Keys::S:
             if (y + 1 < SIZE) {
                 gameDataModel[y][x] -= key;
                 y++;
                 gameDataModel[y][x] += key;
             }
             break;
-        case Keys::LEFT_ARROW: //влево 
+        case Keys::LEFT_ARROW: //влево
+        case Keys::A:
             if (x - 1 >= 0) {
                 gameDataModel[y][x] -= key;
                 x--;
@@ -170,6 +180,7 @@ void keydownHandling(int** gameDataModel, int button, int& x, int& y, int key, i
             }
             break;
         case Keys::RIGHT_ARROW: //вправо
+        case Keys::D:
             if (x + 1 < SIZE) {
                 gameDataModel[y][x] -= key;
                 x++;
@@ -177,6 +188,7 @@ void keydownHandling(int** gameDataModel, int button, int& x, int& y, int key, i
             }
             break;
         case Keys::SPACE:
+        case Keys::ENTER:
             gameDataModel[y][x] -= key;
 
             if (gameDataModel[y][x] == 0) {
@@ -575,7 +587,7 @@ bool getRepeatGame() {
 
             renderMenu(title, menu, menuSize, indicator);
         }
-    } while (button != Keys::SPACE);
+    } while (button != Keys::SPACE && button != Keys::ENTER);
 
     return isRepeat;
 }
